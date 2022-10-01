@@ -7,7 +7,7 @@ $sourcePath = "$rootDir/input.stanzas/"
 $outPath = "$rootDir/output.stanzas/"
 
 Function zipToOutputDir($sourceDir) {
-    $outputZipPath = "$outPath\$userKeyFileName.enc.stanzas.zip"
+    $outputZipPath = "$outPath/$userKeyFileName.enc.stanzas.zip"
     Compress-Archive -Path "$sourceDir/*" -CompressionLevel Optimal -DestinationPath $outputZipPath
 }
 
