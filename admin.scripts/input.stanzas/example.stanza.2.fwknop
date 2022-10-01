@@ -1,0 +1,8 @@
+[default]
+SPOOF_USER                  SOMESTRING
+ALLOW_IP                    0.0.0.0
+ACCESS                      tcp/80
+SPA_SERVER                  0.0.0.0
+KEY_BASE64                  SOMESTRING
+HMAC_KEY_BASE64             SOMESTRING
+USE_HMAC                    Y
