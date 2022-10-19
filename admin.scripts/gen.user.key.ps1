@@ -1,7 +1,7 @@
 # Generates an encryption key
 param([Parameter(Mandatory=$true)][string]$userName)
 
-$EncryptionKeyBytes = New-Object Byte[] 16
+$EncryptionKeyBytes = New-Object Byte[] 32
 [Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($EncryptionKeyBytes)
 $OutDir = ($pwd).path
 Write-Host "Key for user '$userName': $EncryptionKeyBytes"

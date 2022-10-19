@@ -1,43 +1,12 @@
 # Installs an Ubuntu instance and configures it ready for fwknop
 
+$currentDir = ($pwd).path
+$clientDir = (get-item $currentDir).parent.parent.FullName
+$env:PSModulePath = $env:PSModulePath,"$clientDir/modules" -join [System.IO.Path]::PathSeparator
+Import-Module wslCommands
+
 $fwknopUser = "fwknopuser"
 $SPAdistro = "Ubuntu-20.04"
-
-Function outputCleanser ($stringToClean) {
-    # I need to understand why this is needed on some machines, its nonsense...
-    # ---- Nonsense start
-    $returnStr = $stringToClean.replace("`0", "")
-    # ---- Nonsense end
-    return $returnStr
-}
-Function wslCommand($cmdArgs, $exitOnFailure=$True)
-{
-    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-    $pinfo.FileName = "wsl.exe"
-    $pinfo.RedirectStandardError = $True
-    $pinfo.RedirectStandardOutput = $True
-    $pinfo.UseShellExecute = $False
-    $pinfo.Arguments = $cmdArgs
-    $p = New-Object System.Diagnostics.Process
-    $p.StartInfo = $pinfo
-    $p.Start() | Out-Null
-    $stdout = outputCleanser $p.StandardOutput.ReadToEnd()
-    $stderr = outputCleanser $p.StandardError.ReadToEnd()
-    $p | Add-Member "stdout" $stdout
-    $p | Add-Member "stderr" $stderr
-    if ($p.ExitCode -ne 0)
-    {
-        Write-Host "Error thrown running wsl command: $cmdArgs"
-        Write-Host "stdout: $stdout"
-        Write-Host "stderr: $stderr"
-        Write-Host "exit code: " + $p.ExitCode
-        if ($exitOnFailure) {
-            Exit
-        }
-    }
-    $p.WaitForExit()
-    return $p
-}
 
 $allDistros = wslCommand @("--list")
 if ($allDistros.stdout.contains($SPAdistro)) {
@@ -73,5 +42,37 @@ wslCommand @("-d", $SPAdistro, "-u", "root", "apt", "upgrade", "-y")
 Write-Host "Installing fwknop client (SPA)"
 wslCommand @("-d", $SPAdistro, "-u", "root", "apt", "install", "fwknop-client", "-y")
 
-# Add logic for checking zip DIR and creating Stanzas
-Exit
+# Check if we have the zip file and key, we will exit here if not. If all you want to do is update the distro, this is nice (enough).
+$dataDir = "$currentDir/data"
+$dataFiles = Get-ChildItem -Path $dataDir -force | Where-Object Extension -in ('.zip','.key')
+if (($dataFiles | Measure-Object).Count -ne 2) {
+    Write-Host "Looks like you haven't got the required zip and key file in: $dataDir. We will now Exit."
+    Exit
+}
+
+Write-Host "Zip file present in data DIR"
+$stanzaDirName = "stanzas"
+$stanzaDirPresent = wslCommand @("-d", $SPAdistro, "test", "-d", "/home/$fwknopUser/$stanzaDirName") $False
+if ($stanzaDirPresent.ExitCode -eq 1) {
+    Write-Host "Creating Stanza DIR"
+    wslCommand @("-d", $SPAdistro, "mkdir", "/home/$fwknopUser/$stanzaDirName")
+}
+
+$key = Get-Content ($dataFiles | Get-ChildItem | Where-Object Extension -eq ".key")
+$stanzaTempDir = "$dataDir/temp"
+mkdir $stanzaTempDir
+$zip = $dataFiles | Get-ChildItem | Where-Object Extension -eq ".zip"
+Write-Host "Extracting zip"
+Expand-Archive -Path $zip -DestinationPath $stanzaTempDir
+foreach ($encStanza in Get-ChildItem $stanzaTempDir) {
+    $fname = $encStanza.Name
+    $stanzaData = Get-Content "$stanzaTempDir/$fname" | ConvertTo-SecureString -key $key
+    $data = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($stanzaData))
+    # Write each file to the WSL instance
+    Write-Host "Copying Stanza $fname to WSL instance"
+    wslCommand @("-d", $SPAdistro, "echo", $data, ">", "/home/$fwknopUser/$stanzaDirName/$fname")
+}
+
+Write-Host "Tidying up..."
+Remove-Item "$dataDir/*" -Recurse
+Write-Host ".....Installation complete....."
