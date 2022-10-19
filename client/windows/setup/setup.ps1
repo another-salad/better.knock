@@ -11,7 +11,7 @@ $SPAdistro = "Ubuntu-20.04"
 $allDistros = wslCommand @("--list")
 if ($allDistros.stdout.contains($SPAdistro)) {
     Write-Host "WSL Ubuntu instance already installed, validating if it defaults to the fwknop user"
-    $fwknopUserPresent = wslCommand @("-d", $SPAdistro , "-u", $fwknopUser) $False  # we don't want to exit
+    $fwknopUserPresent = wslCommand @("-d", $SPAdistro , "-u", $fwknopUser, "exit") $False  # we don't want to stop installation if the user is there
     if ($fwknopUserPresent.ExitCode -ne 0) {
         Write-Host "An unknown (to me) installation of Ubuntu is already present. Exiting to avoid data loss."
         Exit
