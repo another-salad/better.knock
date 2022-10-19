@@ -60,7 +60,11 @@ if ($stanzaDirPresent.ExitCode -eq 1) {
 
 $key = Get-Content ($dataFiles | Get-ChildItem | Where-Object Extension -eq ".key")
 $stanzaTempDir = "$dataDir/temp"
-mkdir $stanzaTempDir
+# if the DIR exists, this is likely litter from some previous doom. However we don't save any unencrypted data to storage, so
+# its not massively scary... Its also not why the data is encrypted in the first place.
+if (!(Test-Path $stanzaTempDir)) {
+    mkdir $stanzaTempDir
+}
 $zip = $dataFiles | Get-ChildItem | Where-Object Extension -eq ".zip"
 Write-Host "Extracting zip"
 Expand-Archive -Path $zip -DestinationPath $stanzaTempDir
