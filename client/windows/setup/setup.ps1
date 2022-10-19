@@ -70,7 +70,7 @@ foreach ($encStanza in Get-ChildItem $stanzaTempDir) {
     $data = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($stanzaData))
     # Write each file to the WSL instance
     Write-Host "Copying Stanza $fname to WSL instance"
-    wslCommand @("-d", $SPAdistro, "echo", $data, ">", "/home/$fwknopUser/$stanzaDirName/$fname")
+    wslCommand @("-d", $SPAdistro, "echo", "'$data'", ">", "/home/$fwknopUser/$stanzaDirName/$fname")
 }
 
 Write-Host "Tidying up..."
