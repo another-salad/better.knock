@@ -67,7 +67,7 @@ if (!(Test-Path $stanzaTempDir)) {
 }
 $zip = $dataFiles | Get-ChildItem | Where-Object Extension -eq ".zip"
 Write-Host "Extracting zip"
-Expand-Archive -Path $zip -DestinationPath $stanzaTempDir
+Expand-Archive -Path $zip -DestinationPath $stanzaTempDir -Force
 foreach ($encStanza in Get-ChildItem $stanzaTempDir) {
     $fname = $encStanza.Name
     $stanzaData = Get-Content "$stanzaTempDir/$fname" | ConvertTo-SecureString -key $key
