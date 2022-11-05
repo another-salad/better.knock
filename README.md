@@ -1,2 +1,2 @@
 # better.knock
-An Attempt at a logical client, server implementation of SPA
+An Attempt at a logical client implementation of SPA
